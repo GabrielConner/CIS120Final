@@ -21,11 +21,14 @@ class Program {
       try {
          if (!Directory.Exists(mapSaveFolder)) {
             Directory.CreateDirectory(mapSaveFolder);
+            logError("No map folder");
             return;
          } else if (File.Exists(mapSaveLoc)) {
             curMap.loadMapFromFile();
-         } else
+         } else {
+            logError("No map file");
             return;
+         }
 
 
          if (!Directory.Exists(playerSaveFolder))
