@@ -1,14 +1,20 @@
-﻿using SFML.Audio;
+﻿//Just used SFML for another project so I wanted to use it again
+using SFML.Audio;
 
+//Class to hold sound and sound buffer
 class JoinedSound {
    public Sound sound;
+   //sound buffer can be null
    public SoundBuffer? buffer;
 
+   //Create sound and start playing
    public JoinedSound(string soundLoc) {
       buffer = new SoundBuffer(soundLoc);
       sound = new Sound(buffer);
       sound.Play();
    }
+   //Prevents deleting if the buffer is already null
+   //Means that it was never made in the first place, or was deleted previously
    ~JoinedSound() {
       if (buffer == null)
          return;
@@ -19,20 +25,31 @@ class JoinedSound {
    }
 };
 
+//Class to hold static list of 'JoinedSound' and static functions
 class AudioController {
-   static List<JoinedSound> sounds = new List<JoinedSound>(255);
+   //SFML allows a max of 256 sounds, so set list buffer to that size
+   static List<JoinedSound> sounds = new List<JoinedSound>(256);
 
-   public static void clearSounds() {
+   //Deletes all sounds
+   public static void ClearSounds() {
       foreach (JoinedSound sound in sounds) {
          if (sound.buffer == null)
             continue;
 
+         //Can't explicitly call deconstructor as it is controlled by the GC
          sound.sound.Stop();
          sound.sound.Dispose();
          sound.buffer.Dispose();
       }
    }
-   public static void addSound(string soundLoc) {
+
+   //Adds sound to list
+   //Doesn't allow if it would go past max
+   public static void AddSound(string soundLoc) {
+      //Didn't want to include sounds to Update loop
+      //So it only removes completed sounds when you call to add a sound
+      //
+      //This just sets buffer to null to let the list know it is completed
       sounds.ForEach(x => {
          if (x.sound.Status == SoundStatus.Stopped && x.buffer != null) {
             x.sound.Stop();
@@ -41,8 +58,10 @@ class AudioController {
             x.buffer = null;
          }
       });
+
+      //Removed here
       sounds.RemoveAll(x => x.buffer == null);
-      if (sounds.Count < 255)
+      if (sounds.Count < 256)
          sounds.Add(new JoinedSound(soundLoc));
    }
 };

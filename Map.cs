@@ -1,41 +1,45 @@
-﻿
+﻿//Key class to hold position and if it is alive
 class Key {
-   public bool Alive;
-   public IVec2 Position;
+   public bool alive;
+   public IVec2 position;
 
    public Key() {
-      Alive = true;
-      Position = new IVec2(0);
+      alive = true;
+      position = new IVec2(0);
    }
 
    public Key(bool alive, IVec2 pos) {
-      Alive = alive;
-      Position = pos;
+      this.alive = alive;
+      position = pos;
    }
 };
 
-class cMap {
-   public char[,] Map;
-   public List<Key> Keys;
+//character map class
+class CMap {
+   //2D char array
+   public char[,] map;
+   //List of keys
+   public List<Key> keys;
 
+   //View size is the distance in all directions that will be drawn to screen
    public int viewSize;
    public int mapSize;
 
-   public cMap() {
-      Keys = new List<Key>();
+   //Empty map
+   public CMap() {
+      keys = new List<Key>();
    }
 
-   public cMap(int mapSize) {
-      Map = new char[mapSize, mapSize];
-      Keys = new List<Key>();
-   }
 
-   public void loadMapFromFile() {
+   //Opens the map and loads data
+   public void LoadMapFromFile() {
       StreamReader sr = new StreamReader(Program.mapSaveLoc);
 
+      //Error if the map is empty
       if (sr.Peek() == -1)
-         throw new IOException("No map save");
+         throw new IOException("map empty");
 
+      //Read first line which includes map information
       string fLine = sr.ReadLine() ?? "";
       string[] mapVars = fLine.Split(',', StringSplitOptions.TrimEntries);
 
@@ -44,10 +48,13 @@ class cMap {
             mapSize = 5;
          if (!Int32.TryParse(mapVars[1], out viewSize))
             viewSize = 5;
-      }
+      } else
+         throw new ArgumentException("Invalid count of map variables");
 
-      Map = new char[mapSize, mapSize];
+      //keys was already made before in constructor
+      map = new char[mapSize, mapSize];
 
+      //If map sets larger size than what is there this will allow the size but with empty spaces
       bool fillRest = false;
       for (int y = 0; y < mapSize; y++) {
          string? line = sr.ReadLine();
@@ -55,49 +62,48 @@ class cMap {
             fillRest = true;
          for (int x = 0; x < mapSize; x++) {
             if (fillRest || x >= line.Count()) {
-               Map[x, y] = ' ';
+               map[x, y] = ' ';
                continue;
             }
 
             if (line[x] == '*')
-               Keys.Add(new Key(true, new IVec2(x, y)));
+               keys.Add(new Key(true, new IVec2(x, y)));
 
-            Map[x, y] = line[x];
+            map[x, y] = line[x];
          }
       }
       sr.Close();
    }
 
-   public void showMap() {
+   //Shows map into the console
+   public void ShowMap() {
+      //Since view might go past map size there needs to be checks on where to start and stop writing to console
 
-      int startX = Program.curPlayer.PosX - viewSize >= 0 ? Program.curPlayer.PosX - Program.curMap.viewSize : 0;
-      int endX = Program.curPlayer.PosX + viewSize <= mapSize ? Program.curPlayer.PosX + Program.curMap.viewSize : Program.curMap.mapSize;
+      int startX = Program.curPlayer.posX - viewSize >= 0 ? Program.curPlayer.posX - Program.curMap.viewSize : 0;
+      int endX = Program.curPlayer.posX + viewSize <= mapSize ? Program.curPlayer.posX + Program.curMap.viewSize : Program.curMap.mapSize;
 
-      int startY = Program.curPlayer.PosY - viewSize >= 0 ? Program.curPlayer.PosY - Program.curMap.viewSize : 0;
-      int endY = Program.curPlayer.PosY + viewSize <= mapSize ? Program.curPlayer.PosY + Program.curMap.viewSize : Program.curMap.mapSize;
+      int startY = Program.curPlayer.posY - viewSize >= 0 ? Program.curPlayer.posY - Program.curMap.viewSize : 0;
+      int endY = Program.curPlayer.posY + viewSize <= mapSize ? Program.curPlayer.posY + Program.curMap.viewSize : Program.curMap.mapSize;
 
-      int keysCreated = 0;
 
       for (int y = startY; y < endY; y++) {
          for (int x = startX; x < endX; x++) {
-            if ((x, y) == Program.curPlayer.Position) {
-               Console.Write((char)Program.curPlayer.Looking);
-               if (keysCreated < Keys.Count && (x, y) == Keys[keysCreated].Position)
-                  keysCreated++;
+            if ((x, y) == Program.curPlayer.position) {
+               //Player is an arrow that is the direction that was last pressed
+               Console.Write((char)Program.curPlayer.looking);
                continue;
             }
 
-            if (keysCreated < Keys.Count && (x, y) == Keys[keysCreated].Position) {
-               if (Keys[keysCreated].Alive)
-                  Console.Write('*');
-               else
-                  Console.Write(' ');
-               keysCreated++;
-               continue;
-            }
+            //Get key, if any, that is on position
+            Key? curKey = keys.Find(key => (x, y) == key.position);
 
-
-            Console.Write(Map[x, y]);
+            //Write character, or key
+            if (curKey == null)
+               Console.Write(map[x, y]);
+            else if (curKey.alive)
+               Console.Write('*');
+            else
+               Console.Write(' ');
          }
          Console.WriteLine();
       }
