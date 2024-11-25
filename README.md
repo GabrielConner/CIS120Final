@@ -1,7 +1,7 @@
 # CIS120Final
 
 ## How to run
-To run the program all you need to do make sure there is a `.KEYMAP` in the `maps` folder\
+To run the program all you need to do make sure there is a `map.KEYMAP` file in the `maps` folder\
 Then run the `.exe` file
 
 ## In the zip file
